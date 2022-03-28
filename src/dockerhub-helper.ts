@@ -74,18 +74,19 @@ export async function createRepositoryIfNeeded(
       name: dh_name,
       is_private: is_private
     }
-    await fetch(`https://hub.docker.com/v2/repositories/`, {
+    const create_resp = await fetch(`https://hub.docker.com/v2/repositories/`, {
       method: 'post',
       body: JSON.stringify(dh_body),
       headers: {
         'Content-Type': 'application/json',
         Authorization: `JWT ${token}`
       }
-    }).then(res => {
-      if (!res.ok) {
-        throw new Error(res.statusText)
-      }
     })
+    if (!create_resp.ok) {
+      const create_status = create_resp.statusText
+      const create_json = await create_resp.json()
+      throw new Error(create_status + ' - ' + JSON.stringify(create_json))
+    }
   } else {
     core.info('Dockerhub repository is already there, go ahead...')
   }
