@@ -35,7 +35,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateRepositoryDescription = exports.getToken = void 0;
+exports.createRepositoryIfNeeded = exports.updateRepositoryDescription = exports.getToken = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const fetch = __importStar(__nccwpck_require__(467));
 const DESCRIPTION_MAX_CHARS = 100;
@@ -59,7 +59,7 @@ function getToken(username, password) {
     });
 }
 exports.getToken = getToken;
-function updateRepositoryDescription(token, repository, is_private, description, fullDescription) {
+function updateRepositoryDescription(token, repository, description, fullDescription) {
     return __awaiter(this, void 0, void 0, function* () {
         const body = {
             full_description: fullDescription
@@ -67,6 +67,23 @@ function updateRepositoryDescription(token, repository, is_private, description,
         if (description) {
             body['description'] = description.slice(0, DESCRIPTION_MAX_CHARS);
         }
+        yield fetch(`https://hub.docker.com/v2/repositories/${repository}`, {
+            method: 'patch',
+            body: JSON.stringify(body),
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `JWT ${token}`
+            }
+        }).then(res => {
+            if (!res.ok) {
+                throw new Error(res.statusText);
+            }
+        });
+    });
+}
+exports.updateRepositoryDescription = updateRepositoryDescription;
+function createRepositoryIfNeeded(token, repository, is_private) {
+    return __awaiter(this, void 0, void 0, function* () {
         const response = yield fetch(`https://hub.docker.com/v2/repositories/${repository}`, {
             method: 'head',
             headers: {
@@ -74,6 +91,7 @@ function updateRepositoryDescription(token, repository, is_private, description,
             }
         });
         if (response.status == 404) {
+            core.info('Dockerhub repository is NOT there, create it...' + is_private);
             const [dh_namespace, dh_name] = repository.split('/');
             const dh_body = {
                 namespace: dh_namespace,
@@ -93,21 +111,12 @@ function updateRepositoryDescription(token, repository, is_private, description,
                 }
             });
         }
-        yield fetch(`https://hub.docker.com/v2/repositories/${repository}`, {
-            method: 'patch',
-            body: JSON.stringify(body),
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `JWT ${token}`
-            }
-        }).then(res => {
-            if (!res.ok) {
-                throw new Error(res.statusText);
-            }
-        });
+        else {
+            core.info('Dockerhub repository is already there, go ahead...');
+        }
     });
 }
-exports.updateRepositoryDescription = updateRepositoryDescription;
+exports.createRepositoryIfNeeded = createRepositoryIfNeeded;
 
 
 /***/ }),
@@ -260,9 +269,12 @@ function run() {
             // Acquire a token for the Docker Hub API
             core.info('Acquiring token');
             const token = yield dockerhubHelper.getToken(inputs.username, inputs.password);
+            // Make sure repository is there
+            core.info('Checking DockerHub repository');
+            yield dockerhubHelper.createRepositoryIfNeeded(token, inputs.repository, inputs.is_private);
             // Send a PATCH request to update the description of the repository
             core.info('Sending PATCH request');
-            yield dockerhubHelper.updateRepositoryDescription(token, inputs.repository, inputs.is_private, inputs.shortDescription, readmeContent);
+            yield dockerhubHelper.updateRepositoryDescription(token, inputs.repository, inputs.shortDescription, readmeContent);
             core.info('Request successful');
         }
         catch (error) {
