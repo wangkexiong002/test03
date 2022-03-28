@@ -91,7 +91,7 @@ function createRepositoryIfNeeded(token, repository, is_private) {
             }
         });
         if (response.status == 404) {
-            core.info('Dockerhub repository is NOT there, create it...' + is_private);
+            core.info('Create Dockerhub repository with private flag: ' + is_private);
             const [dh_namespace, dh_name] = repository.split('/');
             const dh_body = {
                 namespace: dh_namespace,
