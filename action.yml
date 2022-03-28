@@ -1,0 +1,32 @@
+name: 'Docker Hub Description'
+author: 'Peter Evans'
+description: 'An action to update a Docker Hub repository description from README.md'
+inputs:
+  username:
+    description: Docker Hub username
+    required: true
+  password:
+    description: Docker Hub password
+    required: true
+  repository:
+    description: >
+      Docker Hub repository in the format `<namespace>/<name>`
+      Default: `github.repository`
+  private:
+    description: >
+      If Docker Hub repository is NOT there, create and mark it as private or NOT
+      Default: `false`
+  short-description:
+    description: >
+      Docker Hub repository short description
+      Input exceeding 100 characters will be truncated
+  readme-filepath:
+    description: >
+      Path to the repository readme
+      Default: `./README.md`
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+branding:
+  icon: 'upload'
+  color: 'blue'
