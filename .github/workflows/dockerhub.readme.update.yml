@@ -40,9 +40,11 @@ jobs:
             if [ -f ${{ matrix.dir }}/Dockervar ]; then
               grep -v ^# ${{ matrix.dir }}/Dockervar >> ${GITHUB_ENV} || true
             fi
+      - name: Check env
+        run: set
       - name: Update Docker Hub Description
         if: ${{ env.DOCKER_REPO != '' }}
-        uses: wangkexiong/dockerhub-description@e0d81b64103dac1bba18d6e29ed158f9ede5c295
+        uses: wangkexiong/dockerhub-description@main
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
