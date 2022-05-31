@@ -1,2 +1,0 @@
-DOCKER_REPO=wangkexiong/test
-DOCKER_PLATFORMS=linux/amd64,linux/arm64
